@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"io/fs"
+	"io/ioutil"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -17,6 +18,7 @@ type FileMetadata struct {
 	Owner       string
 	Size        string
 	Permissions string
+	Type        string
 }
 
 type FileSystemService struct {
@@ -30,10 +32,11 @@ func NewFileSystemService(fsApiConfig config.FsApiConfig) FileSystemService {
 }
 
 func (service *FileSystemService) ListRootDirContents() (metadata []FileMetadata, err error) {
-	return service.ListDirContents(service.root)
+	return service.ListDirContents("")
 }
 
-func (service *FileSystemService) ListDirContents(path string) (metadata []FileMetadata, err error) {
+func (service *FileSystemService) ListDirContents(relativePath string) (metadata []FileMetadata, err error) {
+	var path = filepath.Join(service.root, relativePath)
 
 	fileinfo, err := os.ReadDir(path)
 	if err != nil {
@@ -49,7 +52,6 @@ func (service *FileSystemService) ListDirContents(path string) (metadata []FileM
 }
 
 func (service *FileSystemService) buildFileMetadata(dir string, entry fs.DirEntry) FileMetadata {
-
 	var fullPath = filepath.Join(dir, entry.Name())
 
 	fileInfo, err := os.Stat(fullPath)
@@ -57,11 +59,20 @@ func (service *FileSystemService) buildFileMetadata(dir string, entry fs.DirEntr
 		panic(err)
 	}
 
+	var t string
+
+	if fileInfo.IsDir() {
+		t = "Directory"
+	} else {
+		t = "File"
+	}
+
 	return FileMetadata{
 		FileName:    fileInfo.Name(),
 		Owner:       service.getFileOwner(fileInfo),
-		Size:        "",
+		Size:        fmt.Sprintf("%d bytes", fileInfo.Size()),
 		Permissions: "",
+		Type:        t,
 	}
 }
 
@@ -78,6 +89,24 @@ func (service *FileSystemService) getFileOwner(fileInfo fs.FileInfo) (username s
 	} else {
 		username = usr.Name
 	}
+
+	return
+}
+
+func (service *FileSystemService) IsDirectory(path string) bool {
+	var fullPath = filepath.Join(service.root, path)
+	// TODO handle err
+	fileInfo, _ := os.Stat(fullPath)
+	return fileInfo.IsDir()
+
+}
+
+func (service *FileSystemService) ReadFileContents(file string) (contents string, err error) {
+	var path = filepath.Join(service.root, file)
+
+	bytes, err := ioutil.ReadFile(path)
+
+	contents = string(bytes)
 
 	return
 }
