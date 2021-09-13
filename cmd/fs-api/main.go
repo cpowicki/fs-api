@@ -2,19 +2,11 @@ package main
 
 import (
 	"github.com/cpowicki/fs-api/pkg/config"
-	"github.com/cpowicki/fs-api/pkg/service"
+	"github.com/cpowicki/fs-api/pkg/server"
 )
 
 func main() {
 	var fsApiConfig = config.ParseCliArgs()
-	metadata, err := service.ListDirContents(fsApiConfig.Root)
-
-	if err != nil {
-		panic(err)
-	}
-
-	for _, file := range metadata {
-		println(file.FileName)
-		println(file.Owner)
-	}
+	var server = server.NewFileSystemServer(fsApiConfig)
+	server.Start()
 }

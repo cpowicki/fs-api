@@ -1,27 +1,35 @@
 package server
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/cpowicki/fs-api/pkg/config"
 	"github.com/cpowicki/fs-api/pkg/service"
 )
 
-type HttpServer struct {
+type FileSystemServer struct {
 	port      int
 	fsService service.FileSystemService
 }
 
-func (*HttpServer) NewHttpServer(config config.FsApiConfig) HttpServer {
-	return HttpServer{
-		port: config.ServerPort,
+func NewFileSystemServer(config config.FsApiConfig) FileSystemServer {
+	return FileSystemServer{
+		port:      config.ServerPort,
+		fsService: service.NewFileSystemService(config),
 	}
 }
 
-func (*HttpServer) Start() {
+func (s *FileSystemServer) Start() {
+
+	http.HandleFunc("/", s.listRootDir)
+
+	http.ListenAndServe(fmt.Sprintf("%s%d", ":", s.port), nil)
 
 }
 
-func ListRootDir(w http.ResponseWriter, r *http.Request) {
-
+func (s *FileSystemServer) listRootDir(w http.ResponseWriter, r *http.Request) {
+	metdata, _ := s.fsService.ListRootDirContents()
+	json.NewEncoder(w).Encode(metdata)
 }
