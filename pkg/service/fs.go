@@ -3,14 +3,13 @@ package service
 import (
 	"fmt"
 	"io/fs"
-	"io/ioutil"
-	"os"
 	"os/user"
 	"path/filepath"
 	"strconv"
 	"syscall"
 
 	"github.com/cpowicki/fs-api/pkg/config"
+	"github.com/spf13/afero"
 )
 
 type FileMetadata struct {
@@ -23,11 +22,13 @@ type FileMetadata struct {
 
 type FileSystemService struct {
 	root string
+	fs   afero.Fs
 }
 
 func NewFileSystemService(fsApiConfig config.FsApiConfig) FileSystemService {
 	return FileSystemService{
 		root: fsApiConfig.Root,
+		fs:   afero.NewOsFs(),
 	}
 }
 
@@ -35,26 +36,26 @@ func (service *FileSystemService) ListRootDirContents() (metadata []FileMetadata
 	return service.ListDirContents("")
 }
 
-func (service *FileSystemService) ListDirContents(relativePath string) (metadata []FileMetadata, err error) {
-	var path = filepath.Join(service.root, relativePath)
+func (s *FileSystemService) ListDirContents(relativePath string) (metadata []FileMetadata, err error) {
+	var path = filepath.Join(s.root, relativePath)
 
-	fileinfo, err := os.ReadDir(path)
+	fileinfo, err := afero.ReadDir(s.fs, path)
 	if err != nil {
 		return
 	}
 
 	metadata = make([]FileMetadata, len(fileinfo))
 	for i, info := range fileinfo {
-		metadata[i] = service.buildFileMetadata(path, info)
+		metadata[i] = s.buildFileMetadata(path, info)
 	}
 
 	return
 }
 
-func (service *FileSystemService) buildFileMetadata(dir string, entry fs.DirEntry) FileMetadata {
+func (s *FileSystemService) buildFileMetadata(dir string, entry fs.FileInfo) FileMetadata {
 	var fullPath = filepath.Join(dir, entry.Name())
 
-	fileInfo, err := os.Stat(fullPath)
+	fileInfo, err := s.fs.Stat(fullPath)
 	if err != nil {
 		panic(err)
 	}
@@ -68,9 +69,9 @@ func (service *FileSystemService) buildFileMetadata(dir string, entry fs.DirEntr
 
 	return FileMetadata{
 		FileName:    fileInfo.Name(),
-		Owner:       service.getFileOwner(fileInfo),
-		Size:        service.getFileSize(fileInfo),
-		Permissions: service.getFilePermissions(fileInfo),
+		Owner:       s.getFileOwner(fileInfo),
+		Size:        s.getFileSize(fileInfo),
+		Permissions: s.getFilePermissions(fileInfo),
 		Type:        t,
 	}
 }
@@ -86,33 +87,36 @@ func (service *FileSystemService) getFilePermissions(fileInfo fs.FileInfo) strin
 
 func (service *FileSystemService) getFileOwner(fileInfo fs.FileInfo) (username string) {
 
-	sysInfo := fileInfo.Sys().(*syscall.Stat_t)
-	user_id := strconv.FormatUint(uint64(sysInfo.Uid), 10)
-	usr, err := user.LookupId(user_id)
+	if sysInfo, ok := fileInfo.Sys().(*syscall.Stat_t); ok {
+		user_id := strconv.FormatUint(uint64(sysInfo.Uid), 10)
+		usr, err := user.LookupId(user_id)
 
-	if err != nil {
-		// TODO replace with logger
-		fmt.Println("error resolving user for requested file", fileInfo.Name(), err)
-		username = "Unknown"
+		if err != nil {
+			// TODO replace with logger
+			fmt.Println("error resolving user for requested file", fileInfo.Name(), err)
+			username = "Unknown"
+		} else {
+			username = usr.Name
+		}
 	} else {
-		username = usr.Name
+		username = "Unknown"
 	}
 
 	return
 }
 
-func (service *FileSystemService) IsDirectory(path string) bool {
-	var fullPath = filepath.Join(service.root, path)
+func (s *FileSystemService) IsDirectory(path string) bool {
+	var fullPath = filepath.Join(s.root, path)
 	// TODO handle err
-	fileInfo, _ := os.Stat(fullPath)
+	fileInfo, _ := s.fs.Stat(fullPath)
 	return fileInfo.IsDir()
 
 }
 
-func (service *FileSystemService) ReadFileContents(file string) (contents string, err error) {
-	var path = filepath.Join(service.root, file)
+func (s *FileSystemService) ReadFileContents(file string) (contents string, err error) {
+	var path = filepath.Join(s.root, file)
 
-	bytes, err := ioutil.ReadFile(path)
+	bytes, err := afero.ReadFile(s.fs, path)
 
 	contents = string(bytes)
 
