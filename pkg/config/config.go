@@ -5,11 +5,13 @@ import (
 	"os"
 )
 
+// The config for the fs-api
 type FsApiConfig struct {
-	Root       string
-	ServerPort int
+	Root       string // the root directory to expose for browsing
+	ServerPort int    // the port to listen on to handle http requests
 }
 
+// Parses CLI arguments and returns structured config
 func ParseCliArgs() (config FsApiConfig) {
 
 	defaultRoot, set := os.LookupEnv("HOME")

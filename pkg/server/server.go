@@ -10,11 +10,13 @@ import (
 	"github.com/cpowicki/fs-api/pkg/service"
 )
 
+// The HTTP server for fielding HTTP requests
 type FileSystemServer struct {
 	port      int
 	fsService service.FileSystemService
 }
 
+// Creates a new FileSystemServer from config
 func NewFileSystemServer(config config.FsApiConfig) FileSystemServer {
 	return FileSystemServer{
 		port:      config.ServerPort,
@@ -40,6 +42,8 @@ func (s *FileSystemServer) handleRequest(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// Manual parsing of path params - probably could have used a
+	// a web framework for this sort of thing
 	var path = strings.TrimPrefix(r.URL.Path, "/")
 
 	if path == "" {
@@ -64,6 +68,7 @@ func (s *FileSystemServer) handleRequest(w http.ResponseWriter, r *http.Request)
 
 }
 
+// List the contents of the root directory
 func (s *FileSystemServer) listRootDir(w http.ResponseWriter, r *http.Request) {
 	metdata, _ := s.fsService.ListRootDirContents()
 
@@ -74,6 +79,7 @@ func (s *FileSystemServer) listRootDir(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+// List the contents of a directory directory
 func (s *FileSystemServer) listDir(dir string, w http.ResponseWriter, r *http.Request) {
 	metdata, _ := s.fsService.ListDirContents(dir)
 
@@ -83,6 +89,7 @@ func (s *FileSystemServer) listDir(dir string, w http.ResponseWriter, r *http.Re
 	json.NewEncoder(w).Encode(response)
 }
 
+// Reads the contents of an input filepath and returns
 func (s *FileSystemServer) readFileContents(path string, w http.ResponseWriter, r *http.Request) {
 	data, _ := s.fsService.ReadFileContents(path)
 	response := FileContentResponse{

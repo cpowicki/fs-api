@@ -38,12 +38,14 @@ func (service *FileSystemService) ListRootDirContents() (metadata []FileMetadata
 	return service.ListDirContents("")
 }
 
+// Returns true if the input relative file path exists within `root`, false otherwise.
 func (s *FileSystemService) CheckFileExists(file string) bool {
 	var fullPath = filepath.Join(s.root, file)
 	_, err := s.fs.Stat(fullPath)
 	return !errors.Is(err, os.ErrNotExist)
 }
 
+// Lists the contents of a directory
 func (s *FileSystemService) ListDirContents(relativePath string) (metadata []FileMetadata, err error) {
 	var path = filepath.Join(s.root, relativePath)
 
@@ -93,6 +95,7 @@ func (service *FileSystemService) getFilePermissions(fileInfo fs.FileInfo) strin
 	return fmt.Sprintf("%o", fileInfo.Mode().Perm())
 }
 
+// Returns the file owner name
 func (service *FileSystemService) getFileOwner(fileInfo fs.FileInfo) (username string) {
 
 	if sysInfo, ok := fileInfo.Sys().(*syscall.Stat_t); ok {
@@ -113,6 +116,7 @@ func (service *FileSystemService) getFileOwner(fileInfo fs.FileInfo) (username s
 	return
 }
 
+// Checks if the input path is a directory
 func (s *FileSystemService) IsDirectory(path string) bool {
 	var fullPath = filepath.Join(s.root, path)
 	// TODO handle err
@@ -121,6 +125,7 @@ func (s *FileSystemService) IsDirectory(path string) bool {
 
 }
 
+// Reads the contents of a file as a string
 func (s *FileSystemService) ReadFileContents(file string) (contents string, err error) {
 	var path = filepath.Join(s.root, file)
 
