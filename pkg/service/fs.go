@@ -14,11 +14,11 @@ import (
 )
 
 type FileMetadata struct {
-	FileName    string
-	Owner       string
-	Size        string
-	Permissions string
-	Type        string
+	FileName    string `json:"fileName"`
+	Owner       string `json:"owner"`
+	Size        string `json:"size"`
+	Permissions string `json:"permissions"`
+	Type        string `json:"type"`
 }
 
 type FileSystemService struct {

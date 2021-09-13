@@ -52,15 +52,28 @@ func (s *FileSystemServer) handleRequest(w http.ResponseWriter, r *http.Request)
 
 func (s *FileSystemServer) listRootDir(w http.ResponseWriter, r *http.Request) {
 	metdata, _ := s.fsService.ListRootDirContents()
-	json.NewEncoder(w).Encode(metdata)
+
+	response := ListFilesResponse{
+		Files: metdata,
+	}
+
+	json.NewEncoder(w).Encode(response)
 }
 
 func (s *FileSystemServer) listDir(dir string, w http.ResponseWriter, r *http.Request) {
 	metdata, _ := s.fsService.ListDirContents(dir)
-	json.NewEncoder(w).Encode(metdata)
+
+	response := ListFilesResponse{
+		Files: metdata,
+	}
+	json.NewEncoder(w).Encode(response)
 }
 
 func (s *FileSystemServer) readFileContents(path string, w http.ResponseWriter, r *http.Request) {
 	data, _ := s.fsService.ReadFileContents(path)
-	w.Write([]byte(data))
+	response := FileContentResponse{
+		FilePath: path,
+		Data:     data,
+	}
+	json.NewEncoder(w).Encode(response)
 }
