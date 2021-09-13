@@ -60,7 +60,6 @@ func (service *FileSystemService) buildFileMetadata(dir string, entry fs.DirEntr
 	}
 
 	var t string
-
 	if fileInfo.IsDir() {
 		t = "Directory"
 	} else {
@@ -70,10 +69,19 @@ func (service *FileSystemService) buildFileMetadata(dir string, entry fs.DirEntr
 	return FileMetadata{
 		FileName:    fileInfo.Name(),
 		Owner:       service.getFileOwner(fileInfo),
-		Size:        fmt.Sprintf("%d bytes", fileInfo.Size()),
-		Permissions: "",
+		Size:        service.getFileSize(fileInfo),
+		Permissions: service.getFilePermissions(fileInfo),
 		Type:        t,
 	}
+}
+
+func (service *FileSystemService) getFileSize(fileInfo fs.FileInfo) string {
+	// TODO make human readable
+	return fmt.Sprintf("%d bytes", fileInfo.Size())
+}
+
+func (service *FileSystemService) getFilePermissions(fileInfo fs.FileInfo) string {
+	return fmt.Sprintf("%o", fileInfo.Mode().Perm())
 }
 
 func (service *FileSystemService) getFileOwner(fileInfo fs.FileInfo) (username string) {
