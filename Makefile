@@ -2,6 +2,9 @@
 linux: dist/fs-api-linux-amd64
 darwin: dist/fs-api-darwin-amd64
 
+test:
+	go test ./... 
+
 clean:
 	rm dist/*
 
