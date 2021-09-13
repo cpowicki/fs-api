@@ -33,6 +33,10 @@ func (s *FileSystemServer) Start() {
 func (s *FileSystemServer) handleRequest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		w.WriteHeader(405)
+		resp := ErrorResponse{
+			Message: "Method Not Allowed",
+		}
+		json.NewEncoder(w).Encode(resp)
 		return
 	}
 
@@ -41,6 +45,16 @@ func (s *FileSystemServer) handleRequest(w http.ResponseWriter, r *http.Request)
 	if path == "" {
 		s.listRootDir(w, r)
 	} else {
+
+		if !s.fsService.CheckFileExists(path) {
+			w.WriteHeader(404)
+			resp := ErrorResponse{
+				Message: "File not found",
+			}
+			json.NewEncoder(w).Encode(resp)
+			return
+		}
+
 		if s.fsService.IsDirectory(path) {
 			s.listDir(path, w, r)
 		} else {

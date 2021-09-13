@@ -10,3 +10,7 @@ type FileContentResponse struct {
 	FilePath string `json:"filePath"`
 	Data     string `json:"data"`
 }
+
+type ErrorResponse struct {
+	Message string `json:"message"`
+}

@@ -1,8 +1,10 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
+	"os"
 	"os/user"
 	"path/filepath"
 	"strconv"
@@ -34,6 +36,12 @@ func NewFileSystemService(fsApiConfig config.FsApiConfig) FileSystemService {
 
 func (service *FileSystemService) ListRootDirContents() (metadata []FileMetadata, err error) {
 	return service.ListDirContents("")
+}
+
+func (s *FileSystemService) CheckFileExists(file string) bool {
+	var fullPath = filepath.Join(s.root, file)
+	_, err := s.fs.Stat(fullPath)
+	return !errors.Is(err, os.ErrNotExist)
 }
 
 func (s *FileSystemService) ListDirContents(relativePath string) (metadata []FileMetadata, err error) {
